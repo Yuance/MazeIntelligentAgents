@@ -3,32 +3,32 @@ package main;
 import java.util.ArrayList;
 import java.util.List;
 
-import classes.ActionUtilPair;
-import classes.ActionUtilPair.Action;
-import classes.GridWorld;
-import classes.State;
+import model.ActionUtilPair;
+import model.ActionUtilPair.Action;
+import model.Grid;
+import model.State;
 
 import util.ActionUtilHelper;
-import util.Const;
+import util.Constants;
 import util.FileIOHelper;
 import util.FuncHelper;
 
 public class PolicyIterationApp {
 
-	public static GridWorld _gridWorld = null;
+	public static Grid _gridWorld = null;
 	
 	public static void main(String[] args) {
 		
-		_gridWorld = new GridWorld();
+		_gridWorld = new Grid();
 		
 		// Displays the Grid World, just for debugging purposes to ensure correctness
-		_gridWorld.displayGrid();
+		_gridWorld.printGrid();
 		
 		State[][] _grid = _gridWorld.getGrid();
 		
 		// Displays the settings currently used
-		System.out.println("Discount: " + Const.DISCOUNT);
-		System.out.println("k: " + Const.K + " (i.e. # of times simplified Bellman"
+		System.out.println("Discount: " + Constants.DISCOUNT);
+		System.out.println("k: " + Constants.I + " (i.e. # of times simplified Bellman"
 				+ " update is repeated to produce the next utility estimate)");
 		
 		// Perform policy iteration
@@ -58,9 +58,9 @@ public class PolicyIterationApp {
 	 */
 	public static List<ActionUtilPair[][]> policyIteration(final State[][] grid) {
 		
-		ActionUtilPair[][] currUtilArr = new ActionUtilPair[Const.NUM_COLS][Const.NUM_ROWS];
-		for (int col = 0; col < Const.NUM_COLS; col++) {
-			for (int row = 0; row < Const.NUM_ROWS; row++) {
+		ActionUtilPair[][] currUtilArr = new ActionUtilPair[Constants.NUM_COLS][Constants.NUM_ROWS];
+		for (int col = 0; col < Constants.NUM_COLS; col++) {
+			for (int row = 0; row < Constants.NUM_ROWS; row++) {
 				
 				currUtilArr[col][row] = new ActionUtilPair();
 				if (!grid[col][row].isWall()) {
@@ -77,7 +77,7 @@ public class PolicyIterationApp {
 			
 			// Append to list of ActionUtilPair a copy of the existing actions & utilities
 			ActionUtilPair[][] currUtilArrCopy =
-					new ActionUtilPair[Const.NUM_COLS][Const.NUM_ROWS];
+					new ActionUtilPair[Constants.NUM_COLS][Constants.NUM_ROWS];
 			FuncHelper.array2DCopy(currUtilArr, currUtilArrCopy);
 			lstActionUtilPairs.add(currUtilArrCopy);
 			
@@ -87,8 +87,8 @@ public class PolicyIterationApp {
 			bUnchanged = true;
 			
 			// For each state - Policy improvement
-			for (int row = 0; row < Const.NUM_ROWS; row++) {
-				for (int col = 0; col < Const.NUM_COLS; col++) {
+			for (int row = 0; row < Constants.NUM_ROWS; row++) {
+				for (int col = 0; col < Constants.NUM_COLS; col++) {
 
 					// Not necessary to calculate for walls
 					if (grid[col][row].isWall())
@@ -131,18 +131,18 @@ public class PolicyIterationApp {
 	public static ActionUtilPair[][] produceUtilEst(final ActionUtilPair[][] currUtilArr,
 			final State[][] grid) {
 		
-		ActionUtilPair[][] currUtilArrCpy = new ActionUtilPair[Const.NUM_COLS][Const.NUM_ROWS];
-		for (int col = 0; col < Const.NUM_COLS; col++) {
-			for (int row = 0; row < Const.NUM_ROWS; row++) {
+		ActionUtilPair[][] currUtilArrCpy = new ActionUtilPair[Constants.NUM_COLS][Constants.NUM_ROWS];
+		for (int col = 0; col < Constants.NUM_COLS; col++) {
+			for (int row = 0; row < Constants.NUM_ROWS; row++) {
 				currUtilArrCpy[col][row] = new ActionUtilPair(
 						currUtilArr[col][row].getAction(),
 						currUtilArr[col][row].getUtil());
 			}
 		}
 		
-		ActionUtilPair[][] newUtilArr = new ActionUtilPair[Const.NUM_COLS][Const.NUM_ROWS];
-		for (int col = 0; col < Const.NUM_COLS; col++) {
-			for (int row = 0; row < Const.NUM_ROWS; row++) {
+		ActionUtilPair[][] newUtilArr = new ActionUtilPair[Constants.NUM_COLS][Constants.NUM_ROWS];
+		for (int col = 0; col < Constants.NUM_COLS; col++) {
+			for (int row = 0; row < Constants.NUM_ROWS; row++) {
 				newUtilArr[col][row] = new ActionUtilPair();
 			}
 		}
@@ -151,8 +151,8 @@ public class PolicyIterationApp {
 		do {
 			
 			// For each state
-			for (int row = 0; row < Const.NUM_ROWS; row++) {
-				for (int col = 0; col < Const.NUM_COLS; col++) {
+			for (int row = 0; row < Constants.NUM_ROWS; row++) {
+				for (int col = 0; col < Constants.NUM_COLS; col++) {
 	
 					// Not necessary to calculate for walls
 					if (grid[col][row].isWall())
@@ -167,7 +167,7 @@ public class PolicyIterationApp {
 			
 			FuncHelper.array2DCopy(newUtilArr, currUtilArrCpy);
 			
-		} while(++k < Const.K);
+		} while(++k < Constants.I);
 		
 		return newUtilArr;
 	}

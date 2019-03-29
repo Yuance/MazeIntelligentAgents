@@ -3,32 +3,32 @@ package main;
 import java.util.ArrayList;
 import java.util.List;
 
-import classes.ActionUtilPair;
-import classes.GridWorld;
-import classes.State;
+import model.ActionUtilPair;
+import model.Grid;
+import model.State;
 import util.ActionUtilHelper;
-import util.Const;
+import util.Constants;
 import util.FileIOHelper;
 import util.FuncHelper;
 
 public class ValueIterationApp {
 
-	public static GridWorld _gridWorld = null;
+	public static Grid _gridWorld = null;
 	
 	public static void main(String[] args) {
 		
-		_gridWorld = new GridWorld();
+		_gridWorld = new Grid();
 		
 		// Displays the Grid World, just for debugging purposes to ensure correctness
-		_gridWorld.displayGrid();
+		_gridWorld.printGrid();
 		
 		State[][] _grid = _gridWorld.getGrid();
 		
 		// Displays the settings currently used
-		System.out.println("Discount: " + Const.DISCOUNT);
-		System.out.println("Rmax: " + Const.R_MAX);
-		System.out.println("Constant 'c': " + Const.C);
-		System.out.println("Epsilon (c * Rmax): " + Const.EPSILON);
+		System.out.println("Discount: " + Constants.DISCOUNT);
+		System.out.println("Rmax: " + Constants.R_MAX);
+		System.out.println("Constants 'c': " + Constants.C);
+		System.out.println("Epsilon (c * Rmax): " + Constants.EPSILON);
 		
 		// Perform value iteration
 		List<ActionUtilPair[][]> lstActionUtilPairs = valueIteration(_grid);
@@ -54,10 +54,10 @@ public class ValueIterationApp {
 	
 	public static List<ActionUtilPair[][]> valueIteration(final State[][] grid) {
 		
-		ActionUtilPair[][] currUtilArr = new ActionUtilPair[Const.NUM_COLS][Const.NUM_ROWS];
-		ActionUtilPair[][] newUtilArr = new ActionUtilPair[Const.NUM_COLS][Const.NUM_ROWS];
-		for (int col = 0; col < Const.NUM_COLS; col++) {
-			for (int row = 0; row < Const.NUM_ROWS; row++) {
+		ActionUtilPair[][] currUtilArr = new ActionUtilPair[Constants.NUM_COLS][Constants.NUM_ROWS];
+		ActionUtilPair[][] newUtilArr = new ActionUtilPair[Constants.NUM_COLS][Constants.NUM_ROWS];
+		for (int col = 0; col < Constants.NUM_COLS; col++) {
+			for (int row = 0; row < Constants.NUM_ROWS; row++) {
 				newUtilArr[col][row] = new ActionUtilPair();
 			}
 		}
@@ -69,7 +69,7 @@ public class ValueIterationApp {
 		double deltaMin = Double.MAX_VALUE;
 		
 		double convergenceCriteria =
-				Const.EPSILON * ((1.000 - Const.DISCOUNT) / Const.DISCOUNT);
+				Constants.EPSILON * ((1.000 - Constants.DISCOUNT) / Constants.DISCOUNT);
 		System.out.printf("Convergence criteria: %.5f "
 				+ "(i.e. the span semi-norm must be < this value)%n", convergenceCriteria);
 		int numIterations = 0;
@@ -82,13 +82,13 @@ public class ValueIterationApp {
 			
 			// Append to list of ActionUtilPair a copy of the existing actions & utilities
 			ActionUtilPair[][] currUtilArrCopy =
-					new ActionUtilPair[Const.NUM_COLS][Const.NUM_ROWS];
+					new ActionUtilPair[Constants.NUM_COLS][Constants.NUM_ROWS];
 			FuncHelper.array2DCopy(currUtilArr, currUtilArrCopy);
 			lstActionUtilPairs.add(currUtilArrCopy);
 			
 			// For each state
-			for(int row = 0 ; row < Const.NUM_ROWS ; row++) {
-		        for(int col = 0 ; col < Const.NUM_COLS ; col++) {
+			for(int row = 0; row < Constants.NUM_ROWS ; row++) {
+		        for(int col = 0; col < Constants.NUM_COLS ; col++) {
 		        	
 		        	// Not necessary to calculate for walls
 		        	if(grid[col][row].isWall())

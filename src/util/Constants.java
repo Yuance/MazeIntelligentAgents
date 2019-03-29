@@ -1,8 +1,8 @@
 package util;
 
-public class Const {
+public class Constant {
 
-	// Size of the Grid World
+	// Size of the Grid
 	public static final int NUM_COLS = 6;
 	public static final int NUM_ROWS = 6;
 	
@@ -39,7 +39,7 @@ public class Const {
 	public static final double R_MAX = 1.000;
 	
 	// Constant c
-	public static final double C = 0.100;	// FIXME: What to use for constant c
+	public static final double C = 0.100;	//
 	
 	// Epsilon e = c * Rmax
 	public static final double EPSILON = C * R_MAX;
