@@ -1,29 +1,27 @@
-package classes;
+package model;
 
-/** A single state **/
+/** A state consisting the reward and isWall information for a cell**/
 public class State {
 	
-	private double _reward = 0.000;
-	
-	private boolean _bIsWall = false;
+	private double reward = 0.0;
+	private boolean isWall = false;
 
-	public State(double reward) {
-		_reward = reward;
+	State(double reward) {
+		this.reward = reward;
 	}
-	
+
+	/**
+	 * Getters and Settings
+	 * */
 	public double getReward() {
-		return _reward;
-	}
-	
-	public void setReward(double reward) {
-		_reward = reward;
+		return reward;
 	}
 	
 	public boolean isWall() {
-		return _bIsWall;
+		return isWall;
 	}
 	
-	public void setAsWall(boolean bIsWall) {
-		_bIsWall = bIsWall;
+	void setWall(boolean isWall) {
+		this.isWall = isWall;
 	}
 }

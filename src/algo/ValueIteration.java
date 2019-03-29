@@ -1,118 +1,103 @@
-package main;
+package algo;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import model.ActionUtilPair;
 import model.Grid;
 import model.State;
-import util.ActionUtilHelper;
 import util.Constants;
-import util.FileIOHelper;
-import util.FuncHelper;
 
-public class ValueIterationApp {
+public class ValueIteration {
 
-	public static Grid _gridWorld = null;
-	
 	public static void main(String[] args) {
 		
-		_gridWorld = new Grid();
-		
-		// Displays the Grid World, just for debugging purposes to ensure correctness
-		_gridWorld.printGrid();
-		
-		State[][] _grid = _gridWorld.getGrid();
-		
-		// Displays the settings currently used
+		Grid iterationGrid = new Grid();
+		iterationGrid.printGrid();
+
+		// print the parameters
 		System.out.println("Discount: " + Constants.DISCOUNT);
 		System.out.println("Rmax: " + Constants.R_MAX);
-		System.out.println("Constants 'c': " + Constants.C);
-		System.out.println("Epsilon (c * Rmax): " + Constants.EPSILON);
+		System.out.println("Epsilon: " + Constants.EPSILON);
 		
-		// Perform value iteration
-		List<ActionUtilPair[][]> lstActionUtilPairs = valueIteration(_grid);
-		
-		// Output to csv file to plot utility estimates as a function of iteration
-		FileIOHelper.writeToFile(lstActionUtilPairs, "value_iteration_utilities");
-		
-		// Final item in the list is the optimal policy derived by value iteration
-		final ActionUtilPair[][] optimalPolicy =
-				lstActionUtilPairs.get(lstActionUtilPairs.size() - 1);
-		
-		// Display the utilities of all the (non-wall) states
-		ActionUtilHelper.displayUtilities(_grid, optimalPolicy);
-		
-		// Display the optimal policy
-		System.out.println("\nOptimal Policy:");
-		ActionUtilHelper.displayPolicy(optimalPolicy);
-		
-		// Display the utilities of all states
-		System.out.println("\nUtilities of all states:");
-		ActionUtilHelper.displayUtilitiesGrid(optimalPolicy);
+		// Start value iteration
+		valueIteration(iterationGrid);
+
+		// Output to csv file to plot the whole iteration history
+        iterationGrid.writeGridResultsToFile(iterationGrid, "grid_value_history");
+        iterationGrid.writePlainResultsToFile(iterationGrid, "plain_value_history");
+        // Print the result
+        System.out.println("Final Utility:");
+        iterationGrid.printUtility(iterationGrid.getUtility());
+        System.out.println("Final Policy");
+        iterationGrid.printPolicy(iterationGrid.getAction());
+//        int resultSize = iterationGrid.getUtilityResults().size();
+//        iterationGrid.printUtility(iterationGrid.getUtilityResults().get(resultSize-1));
+//        iterationGrid.printPolicy(iterationGrid.getActionResults().get(resultSize-1));
 	}
 	
-	public static List<ActionUtilPair[][]> valueIteration(final State[][] grid) {
-		
-		ActionUtilPair[][] currUtilArr = new ActionUtilPair[Constants.NUM_COLS][Constants.NUM_ROWS];
-		ActionUtilPair[][] newUtilArr = new ActionUtilPair[Constants.NUM_COLS][Constants.NUM_ROWS];
-		for (int col = 0; col < Constants.NUM_COLS; col++) {
-			for (int row = 0; row < Constants.NUM_ROWS; row++) {
-				newUtilArr[col][row] = new ActionUtilPair();
-			}
-		}
-		
-		List<ActionUtilPair[][]> lstActionUtilPairs = new ArrayList<>();
-		
-		// For using span semi-norm instead of max norm
-		double deltaMax = Double.MIN_VALUE;
-		double deltaMin = Double.MAX_VALUE;
-		
-		double convergenceCriteria =
-				Constants.EPSILON * ((1.000 - Constants.DISCOUNT) / Constants.DISCOUNT);
-		System.out.printf("Convergence criteria: %.5f "
-				+ "(i.e. the span semi-norm must be < this value)%n", convergenceCriteria);
+	private static void valueIteration(final Grid grid) {
+
+	    State[][] states = grid.getStates();
+		List<double[][]> utilityResults = new ArrayList<>();
+		List<int[][]> actionResults = new ArrayList<>();
+		double[][] utilityArr = grid.getUtility();
+		int[][] actionArr = grid.getAction();
+
+		double convergenceValue = Constants.EPSILON * ((1.000 - Constants.DISCOUNT) / Constants.DISCOUNT);
+        System.out.printf("Convergence value: %.5f %n", convergenceValue);
+        double delta = 0.0;
 		int numIterations = 0;
-		
+
 		do {
-			
-			FuncHelper.array2DCopy(newUtilArr, currUtilArr);
-			deltaMax = Double.MIN_VALUE;
-			deltaMin = Double.MAX_VALUE;
-			
-			// Append to list of ActionUtilPair a copy of the existing actions & utilities
-			ActionUtilPair[][] currUtilArrCopy =
-					new ActionUtilPair[Constants.NUM_COLS][Constants.NUM_ROWS];
-			FuncHelper.array2DCopy(currUtilArr, currUtilArrCopy);
-			lstActionUtilPairs.add(currUtilArrCopy);
-			
+		    //maximum change delta
+			delta = 0.0;
+			// Append to lists of Action,Utility, a copy of the existing actions & utilities
+            double[][] curUtilityArr = new double[Constants.NUM_COLS][Constants.NUM_ROWS];
+            int[][] curActionArr = new int[Constants.NUM_COLS][Constants.NUM_ROWS];
+            Grid.array2DCopy(utilityArr, curUtilityArr);
+            Grid.array2DCopy(actionArr, curActionArr);
+            utilityResults.add(curUtilityArr);
+            actionResults.add(curActionArr);
+
 			// For each state
 			for(int row = 0; row < Constants.NUM_ROWS ; row++) {
 		        for(int col = 0; col < Constants.NUM_COLS ; col++) {
-		        	
-		        	// Not necessary to calculate for walls
-		        	if(grid[col][row].isWall())
+
+		        	// Skip the wall
+		        	if(states[col][row].isWall())
 		        		continue;
-		        	
-		        	newUtilArr[col][row] =
-		        			FuncHelper.calcBestUtility(col, row, currUtilArr, grid);
-		        	
-		        	double newUtil = newUtilArr[col][row].getUtil();
-		        	double currUtil = currUtilArr[col][row].getUtil();
-		        	double sDelta = Math.abs(newUtil - currUtil);
-		        	
-		        	// Update maximum delta & minimum delta, if necessary
-		        	deltaMax = Math.max(deltaMax, sDelta);
-		        	deltaMin = Math.min(deltaMin, sDelta);
+
+		        	//Start from Up: 0, Right: 1, Down: 2, Left: 3, get the best Utility
+                    double actionUtility = 0.0;
+                    double maxUtility = 0.0;
+                    int maxAction = 0;
+                    for (int i = 0; i < 4; i++) {
+
+                        actionUtility = grid.calcActionUtility(col, row, i);
+                        if (actionUtility > maxUtility) {
+                            maxUtility = actionUtility;
+                            maxAction = i;
+                        }
+                    }
+                    double currUtility = utilityArr[col][row];
+                    double diff = Math.abs(actionUtility - currUtility);
+                    // Update maximum delta
+                    if (diff > delta){
+                        delta = diff;
+                    }
+                    utilityArr[col][row] = actionUtility;
+                    actionArr[col][row] = maxAction;
 		        }
 			}
-			
+            grid.setAction(actionArr);
+			grid.setUtility(utilityArr);
 			++numIterations;
-			
-			// Terminating condition: Span semi-norm less than the convergence criteria
-		} while ((deltaMax - deltaMin) >= convergenceCriteria);
-		
+
+			// max-norm less than the convergence value, terminate
+		} while (delta >= convergenceValue);
+
+		grid.setActionResults(actionResults);
+		grid.setUtilityResults(utilityResults);
+
 		System.out.printf("%nNumber of iterations: %d%n", numIterations);
-		return lstActionUtilPairs;
 	}
 }

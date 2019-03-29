@@ -1,50 +1,44 @@
 package util;
 
-public class Constant {
+public class Constants {
 
 	// Size of the Grid
 	public static final int NUM_COLS = 6;
 	public static final int NUM_ROWS = 6;
+	// direction
+	public static final int UP = 0;
+	public static final int RIGHT = 1;
+	public static final int DOWN = 2;
+	public static final int LEFT = 3;
+
+
+	// Transition model
+	public static final double INTENT_PROB = 0.8;
+	public static final double L_INTENT_PROB = 0.1;
+	public static final double R_INTENT_PROB = 0.1;
 	
 	// Reward functions
 	public static final double WHITE_REWARD = -0.040;
 	public static final double GREEN_REWARD = +1.000;
 	public static final double BROWN_REWARD = -1.000;
 	public static final double WALL_REWARD = 0.000;
-	
-	/// Transition model
-	public static final double PROB_INTENT = 0.800;
-	public static final double PROB_CCW = 0.100;
-	public static final double PROB_CW = 0.100;
-	
-	// Delimiters
-	public static final String GRID_DELIM = ";";
-	public static final String COL_ROW_DELIM = ",";
-	
-	// Grid World information in (col, row) format delimited by semi-colon
-	public static final String GREEN_SQUARES = "0,0; 2,0; 5,0; 3,1; 4,2; 5,3";
-	public static final String BROWN_SQUARES = "1,1; 5,1; 2,2; 3,3; 4,4";
-	public static final String WALLS_SQUARES = "1,0; 4,1; 1,4; 2,4; 3,4";
-	
-	// Agent's starting position
-	// NOTE: A remarkable consequence of using discounted utilities with infinite
-	// horizons is that the optimal policy is independent of the starting state
-	public static final int AGENT_START_COL = 2;
-	public static final int AGENT_START_ROW = 3;
-	
-	// Discount factor
-	public static final double DISCOUNT =  0.990;
-	
-	// Rmax
-	public static final double R_MAX = 1.000;
-	
-	// Constant c
-	public static final double C = 0.100;	//
-	
-	// Epsilon e = c * Rmax
-	public static final double EPSILON = C * R_MAX;
-	
-	// Constant k (i.e. number of times simplified Bellman update is executed
-	// to produce the next utility estimate)
-	public static final int K = 10;
+
+	// Grid Information
+    public static final String MAP_PATH = "src/map/originalgrid.txt";
+
+	// Starting position
+    public static final int AGENT_START_ROW = 0;
+    public static final int AGENT_START_COL = 0;
+
+    // Rmax
+    public static final double R_MAX = 1.0;
+
+    public static final double EPSILON = 0.1;
+
+    // Discount factor
+    public static final double DISCOUNT =  0.99;
+
+
+	// number of times simplified Bellman update is executed
+	public static final int I = 10;
 }

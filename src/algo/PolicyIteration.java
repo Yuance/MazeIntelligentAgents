@@ -1,174 +1,129 @@
-package main;
+package algo;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import model.ActionUtilPair;
-import model.ActionUtilPair.Action;
 import model.Grid;
 import model.State;
 
-import util.ActionUtilHelper;
 import util.Constants;
-import util.FileIOHelper;
-import util.FuncHelper;
 
-public class PolicyIterationApp {
+public class PolicyIteration {
 
-	public static Grid _gridWorld = null;
-	
 	public static void main(String[] args) {
+
+		Grid iterationGrid = new Grid();
 		
-		_gridWorld = new Grid();
+		// print the Grid
+		iterationGrid.printGrid();
 		
-		// Displays the Grid World, just for debugging purposes to ensure correctness
-		_gridWorld.printGrid();
-		
-		State[][] _grid = _gridWorld.getGrid();
-		
-		// Displays the settings currently used
+		// print the parameters
 		System.out.println("Discount: " + Constants.DISCOUNT);
-		System.out.println("k: " + Constants.I + " (i.e. # of times simplified Bellman"
-				+ " update is repeated to produce the next utility estimate)");
+		System.out.println("I: " + Constants.I + " number of times simplified Bellman"
+				+ " update is repeated to produce the next utility estimate");
 		
 		// Perform policy iteration
-		List<ActionUtilPair[][]> lstActionUtilPairs = policyIteration(_grid);
-		
+		policyIteration(iterationGrid);
 		// Output to csv file to plot utility estimates as a function of iteration
-		FileIOHelper.writeToFile(lstActionUtilPairs, "policy_iteration_utilities");
-		
-		// Final item in the list is the optimal policy derived by policy iteration
-		final ActionUtilPair[][] optimalPolicy =
-				lstActionUtilPairs.get(lstActionUtilPairs.size() - 1);
-		
-		// Display the utilities of all the (non-wall) states
-		ActionUtilHelper.displayUtilities(_grid, optimalPolicy);
-		
-		// Display the optimal policy
-		System.out.println("\nOptimal Policy:");
-		ActionUtilHelper.displayPolicy(optimalPolicy);
-		
-		// Display the utilities of all states
-		System.out.println("\nUtilities of all states:");
-		ActionUtilHelper.displayUtilitiesGrid(optimalPolicy);
+        iterationGrid.writeGridResultsToFile(iterationGrid, "grid_policy_history");
+        iterationGrid.writePlainResultsToFile(iterationGrid, "plain_policy_history");
+
+        // Display the utilities of all the (non-wall) states
+        System.out.println("\nFinal Utilities:");
+        iterationGrid.printUtility(iterationGrid.getUtility());
+
+        // Display the optimal policy
+        System.out.println("\nFinal Optimal Policy:");
+        iterationGrid.printPolicy(iterationGrid.getAction());
 	}
 	
 	/**
-	 * Performs modified policy iteration
+	 * Modified policy iteration
 	 */
-	public static List<ActionUtilPair[][]> policyIteration(final State[][] grid) {
-		
-		ActionUtilPair[][] currUtilArr = new ActionUtilPair[Constants.NUM_COLS][Constants.NUM_ROWS];
-		for (int col = 0; col < Constants.NUM_COLS; col++) {
-			for (int row = 0; row < Constants.NUM_ROWS; row++) {
-				
-				currUtilArr[col][row] = new ActionUtilPair();
-				if (!grid[col][row].isWall()) {
-					currUtilArr[col][row].setAction(Action.UP);
-				}
-			}
-		}
-		
-		List<ActionUtilPair[][]> lstActionUtilPairs = new ArrayList<>();
-		boolean bUnchanged = true;
+	private static void policyIteration(Grid grid) {
+
+        State[][] states = grid.getStates();
+        List<double[][]> utilityResults = new ArrayList<>();
+        List<int[][]> actionResults = new ArrayList<>();
+        double[][] utilityArr = grid.getUtility();
+        int[][] actionArr = grid.getAction();
+
+		boolean policyChanged;
 		int numIterations = 0;
 		
 		do {
-			
-			// Append to list of ActionUtilPair a copy of the existing actions & utilities
-			ActionUtilPair[][] currUtilArrCopy =
-					new ActionUtilPair[Constants.NUM_COLS][Constants.NUM_ROWS];
-			FuncHelper.array2DCopy(currUtilArr, currUtilArrCopy);
-			lstActionUtilPairs.add(currUtilArrCopy);
-			
-			// Policy estimation
-			ActionUtilPair[][] policyActionUtil = produceUtilEst(currUtilArr, grid);
-			
-			bUnchanged = true;
-			
+			// Append to lists of Action,Utility, a copy of the existing actions & utilities
+            double[][] curUtilityArr = new double[Constants.NUM_COLS][Constants.NUM_ROWS];
+            int[][] curActionArr = new int[Constants.NUM_COLS][Constants.NUM_ROWS];
+            Grid.array2DCopy(utilityArr, curUtilityArr);
+            Grid.array2DCopy(actionArr, curActionArr);
+            utilityResults.add(curUtilityArr);
+            actionResults.add(curActionArr);
+
+            /* Step 1: Policy estimation
+            *   Simplified Bellman update
+            * */
+            int i = 0;
+            do {
+                // For each state
+                for (int row = 0; row < Constants.NUM_ROWS; row++) {
+                    for (int col = 0; col < Constants.NUM_COLS; col++) {
+
+                        // Skip walls
+                        if (states[col][row].isWall())
+                            continue;
+
+                        // Updates the utility based on the action stated in the policy
+                        utilityArr[col][row] = grid.calcActionUtility(col, row, actionArr[col][row]);
+                    }
+                }
+                //until the Iteration times meet
+            } while(++i < Constants.I);
+            grid.setUtility(utilityArr);
+
+			policyChanged = true;
+
+			/*
+			* Step 2: policy improvement
+			* */
+
 			// For each state - Policy improvement
 			for (int row = 0; row < Constants.NUM_ROWS; row++) {
 				for (int col = 0; col < Constants.NUM_COLS; col++) {
 
 					// Not necessary to calculate for walls
-					if (grid[col][row].isWall())
+					if (states[col][row].isWall())
 						continue;
 
 					// Best calculated action based on maximizing utility
-					ActionUtilPair bestActionUtil =
-							FuncHelper.calcBestUtility(col, row, policyActionUtil, grid);
+                    double actionUtility, fixedActionUtility;
+                    double maxUtility = 0.0;
+                    int maxAction = 0;
+                    
+                    for (int dir = 0; dir < 4; dir++) {
+
+                        actionUtility = grid.calcActionUtility(col, row, dir);
+                        if (actionUtility > maxUtility) {
+                            maxUtility = actionUtility;
+                            maxAction = dir;
+                        }
+                    }
 					
-					// Action and the corresponding utlity based on current policy
-					Action policyAction = policyActionUtil[col][row].getAction();
-					ActionUtilPair pActionUtil = FuncHelper.calcFixedUtility(
-							policyAction, col, row, policyActionUtil, grid);
-					
-					if((bestActionUtil.getUtil() > pActionUtil.getUtil())) {
+					// Action and the corresponding utility based on current policy
+					fixedActionUtility = grid.calcActionUtility(col, row, actionArr[col][row]);
+					if(maxUtility > fixedActionUtility) {
 						
-						policyActionUtil[col][row].setAction(bestActionUtil.getAction());
-						bUnchanged = false;
+					    actionArr[col][row] = maxAction;
+						policyChanged = false;
 					}
 				}
 			}
-			
-			FuncHelper.array2DCopy(policyActionUtil, currUtilArr);
-			
+			grid.setAction(actionArr);
 			numIterations++;
-			
-		} while (!bUnchanged);
-		
+		} while (!policyChanged);
+		grid.setUtilityResults(utilityResults);
+		grid.setActionResults(actionResults);
 		System.out.printf("%nNumber of iterations: %d%n", numIterations);
-		return lstActionUtilPairs;
 	}
 	
-	/**
-	 * Simplified Bellman update to produce the next utility estimate
-	 * 
-	 * @param currUtilArr	Array of the current utility values
-	 * @param grid			The Grid World
-	 * @return				The next utility estimate of all the states
-	 */
-	public static ActionUtilPair[][] produceUtilEst(final ActionUtilPair[][] currUtilArr,
-			final State[][] grid) {
-		
-		ActionUtilPair[][] currUtilArrCpy = new ActionUtilPair[Constants.NUM_COLS][Constants.NUM_ROWS];
-		for (int col = 0; col < Constants.NUM_COLS; col++) {
-			for (int row = 0; row < Constants.NUM_ROWS; row++) {
-				currUtilArrCpy[col][row] = new ActionUtilPair(
-						currUtilArr[col][row].getAction(),
-						currUtilArr[col][row].getUtil());
-			}
-		}
-		
-		ActionUtilPair[][] newUtilArr = new ActionUtilPair[Constants.NUM_COLS][Constants.NUM_ROWS];
-		for (int col = 0; col < Constants.NUM_COLS; col++) {
-			for (int row = 0; row < Constants.NUM_ROWS; row++) {
-				newUtilArr[col][row] = new ActionUtilPair();
-			}
-		}
-		
-		int k = 0;
-		do {
-			
-			// For each state
-			for (int row = 0; row < Constants.NUM_ROWS; row++) {
-				for (int col = 0; col < Constants.NUM_COLS; col++) {
-	
-					// Not necessary to calculate for walls
-					if (grid[col][row].isWall())
-						continue;
-	
-					// Updates the utility based on the action stated in the policy
-					Action action = currUtilArrCpy[col][row].getAction();
-					newUtilArr[col][row] = FuncHelper.calcFixedUtility(action,
-							col, row, currUtilArrCpy, grid);
-				}
-			}
-			
-			FuncHelper.array2DCopy(newUtilArr, currUtilArrCpy);
-			
-		} while(++k < Constants.I);
-		
-		return newUtilArr;
-	}
 }
