@@ -4,7 +4,6 @@ import util.Constants;
 
 import java.io.*;
 import java.text.DecimalFormat;
-import java.util.ArrayList;
 import java.util.List;
 
 public class Grid {
@@ -54,7 +53,6 @@ public class Grid {
     public void setActionResults(List<int[][]> actionResults) {
         this.actionResults = actionResults;
     }
-
 	/**
 	 * Initialize the States, Utility, Action
      * */
@@ -141,10 +139,10 @@ public class Grid {
         actionUtility += Constants.INTENT_PROB * move(col, row, intended);
 
         // Direction intended to move, but go left right angle instead
-        actionUtility += Constants.R_INTENT_PROB * move(col, row, left);
+        actionUtility += Constants.L_INTENT_PROB * move(col, row, left);
 
         // Direction intended to move, but go right right angle instead
-        actionUtility += Constants.L_INTENT_PROB * move(col, row, right);
+        actionUtility += Constants.R_INTENT_PROB * move(col, row, right);
 
         // Final utility
         actionUtility = states[col][row].getReward() + Constants.DISCOUNT * actionUtility;

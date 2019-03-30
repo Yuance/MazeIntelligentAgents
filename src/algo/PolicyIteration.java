@@ -19,7 +19,7 @@ public class PolicyIteration {
 		
 		// print the parameters
 		System.out.println("Discount: " + Constants.DISCOUNT);
-		System.out.println("I: " + Constants.I + " number of times simplified Bellman"
+		System.out.println("I: " + Constants.I + " times simplified Bellman"
 				+ " update is repeated to produce the next utility estimate");
 		
 		// Perform policy iteration
@@ -45,14 +45,16 @@ public class PolicyIteration {
         State[][] states = grid.getStates();
         List<double[][]> utilityResults = new ArrayList<>();
         List<int[][]> actionResults = new ArrayList<>();
-        double[][] utilityArr = grid.getUtility();
-        int[][] actionArr = grid.getAction();
 
-		boolean policyChanged;
+		boolean policyUnchanged;
 		int numIterations = 0;
 		
 		do {
-			// Append to lists of Action,Utility, a copy of the existing actions & utilities
+            double[][] utilityArr = new double[Constants.NUM_COLS][Constants.NUM_ROWS];;
+            Grid.array2DCopy(grid.getUtility(), utilityArr);
+            int[][] actionArr = grid.getAction();
+
+            // Append to lists of Action,Utility, a copy of the existing actions & utilities
             double[][] curUtilityArr = new double[Constants.NUM_COLS][Constants.NUM_ROWS];
             int[][] curActionArr = new int[Constants.NUM_COLS][Constants.NUM_ROWS];
             Grid.array2DCopy(utilityArr, curUtilityArr);
@@ -77,11 +79,11 @@ public class PolicyIteration {
                         utilityArr[col][row] = grid.calcActionUtility(col, row, actionArr[col][row]);
                     }
                 }
+                grid.setUtility(utilityArr);
                 //until the Iteration times meet
             } while(++i < Constants.I);
-            grid.setUtility(utilityArr);
 
-			policyChanged = true;
+			policyUnchanged = true;
 
 			/*
 			* Step 2: policy improvement
@@ -97,7 +99,7 @@ public class PolicyIteration {
 
 					// Best calculated action based on maximizing utility
                     double actionUtility, fixedActionUtility;
-                    double maxUtility = 0.0;
+                    double maxUtility = -Double.MAX_VALUE;
                     int maxAction = 0;
                     
                     for (int dir = 0; dir < 4; dir++) {
@@ -114,13 +116,12 @@ public class PolicyIteration {
 					if(maxUtility > fixedActionUtility) {
 						
 					    actionArr[col][row] = maxAction;
-						policyChanged = false;
+						policyUnchanged = false;
 					}
 				}
 			}
-			grid.setAction(actionArr);
 			numIterations++;
-		} while (!policyChanged);
+		} while (!policyUnchanged);
 		grid.setUtilityResults(utilityResults);
 		grid.setActionResults(actionResults);
 		System.out.printf("%nNumber of iterations: %d%n", numIterations);

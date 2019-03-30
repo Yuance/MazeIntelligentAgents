@@ -25,13 +25,10 @@ public class ValueIteration {
         iterationGrid.writeGridResultsToFile(iterationGrid, "grid_value_history");
         iterationGrid.writePlainResultsToFile(iterationGrid, "plain_value_history");
         // Print the result
-        System.out.println("Final Utility:");
+        System.out.println("Final Utilities:");
         iterationGrid.printUtility(iterationGrid.getUtility());
-        System.out.println("Final Policy");
+        System.out.println("Final Optimal Policy:");
         iterationGrid.printPolicy(iterationGrid.getAction());
-//        int resultSize = iterationGrid.getUtilityResults().size();
-//        iterationGrid.printUtility(iterationGrid.getUtilityResults().get(resultSize-1));
-//        iterationGrid.printPolicy(iterationGrid.getActionResults().get(resultSize-1));
 	}
 	
 	private static void valueIteration(final Grid grid) {
@@ -39,8 +36,6 @@ public class ValueIteration {
 	    State[][] states = grid.getStates();
 		List<double[][]> utilityResults = new ArrayList<>();
 		List<int[][]> actionResults = new ArrayList<>();
-		double[][] utilityArr = grid.getUtility();
-		int[][] actionArr = grid.getAction();
 
 		double convergenceValue = Constants.EPSILON * ((1.000 - Constants.DISCOUNT) / Constants.DISCOUNT);
         System.out.printf("Convergence value: %.5f %n", convergenceValue);
@@ -50,6 +45,12 @@ public class ValueIteration {
 		do {
 		    //maximum change delta
 			delta = 0.0;
+
+            double[][] utilityArr = new double[Constants.NUM_COLS][Constants.NUM_ROWS];;
+            int[][] actionArr = new int[Constants.NUM_COLS][Constants.NUM_ROWS];
+            Grid.array2DCopy(grid.getUtility(), utilityArr);
+            Grid.array2DCopy(grid.getAction(), actionArr);
+
 			// Append to lists of Action,Utility, a copy of the existing actions & utilities
             double[][] curUtilityArr = new double[Constants.NUM_COLS][Constants.NUM_ROWS];
             int[][] curActionArr = new int[Constants.NUM_COLS][Constants.NUM_ROWS];
@@ -59,8 +60,8 @@ public class ValueIteration {
             actionResults.add(curActionArr);
 
 			// For each state
-			for(int row = 0; row < Constants.NUM_ROWS ; row++) {
-		        for(int col = 0; col < Constants.NUM_COLS ; col++) {
+			for(int col = 0; col < Constants.NUM_COLS; col++) {
+		        for(int row = 0; row < Constants.NUM_ROWS; row++) {
 
 		        	// Skip the wall
 		        	if(states[col][row].isWall())
@@ -68,7 +69,7 @@ public class ValueIteration {
 
 		        	//Start from Up: 0, Right: 1, Down: 2, Left: 3, get the best Utility
                     double actionUtility = 0.0;
-                    double maxUtility = 0.0;
+                    double maxUtility = -Double.MAX_VALUE;
                     int maxAction = 0;
                     for (int i = 0; i < 4; i++) {
 
@@ -79,17 +80,17 @@ public class ValueIteration {
                         }
                     }
                     double currUtility = utilityArr[col][row];
-                    double diff = Math.abs(actionUtility - currUtility);
+                    double diff = Math.abs(maxUtility - currUtility);
                     // Update maximum delta
                     if (diff > delta){
                         delta = diff;
                     }
-                    utilityArr[col][row] = actionUtility;
+                    utilityArr[col][row] = maxUtility;
                     actionArr[col][row] = maxAction;
 		        }
 			}
             grid.setAction(actionArr);
-			grid.setUtility(utilityArr);
+            grid.setUtility(utilityArr);
 			++numIterations;
 
 			// max-norm less than the convergence value, terminate
